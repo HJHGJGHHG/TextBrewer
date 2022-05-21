@@ -3,33 +3,35 @@ import os
 from typing import Union, List, Optional, Dict
 from .presets import *
 
+
 class Config:
     """Base class for TrainingConfig and DistillationConfig."""
-    def __init__(self,**kwargs):
+    
+    def __init__(self, **kwargs):
         pass
-
+    
     @classmethod
     def from_json_file(cls, json_filename):
         """Construct configurations from a json file."""
-        with open(json_filename,'r') as f:
+        with open(json_filename, 'r') as f:
             json_data = json.load(f)
         return cls.from_dict(json_data)
-
+    
     @classmethod
     def from_dict(cls, dict_object):
         """Construct configurations from a dict."""
         config = cls(**dict_object)
         return config
-
+    
     def __str__(self):
         str = ""
-        for k,v in self.__dict__.items():
+        for k, v in self.__dict__.items():
             str += f"{k} : {v}\n"
         return str
-
+    
     def __repr__(self):
         classname = self.__class__.__name__
-        return classname +":\n"+self.__str__()
+        return classname + ":\n" + self.__str__()
 
 
 class TrainingConfig(Config):
@@ -67,21 +69,22 @@ class TrainingConfig(Config):
         train_config = TrainingConfig(ckpt_frequency=1, ckpt_epoch_frequency=2)
 
     """
-    def __init__(self,gradient_accumulation_steps = 1,
-                 ckpt_frequency = 1,
-                 ckpt_epoch_frequency = 1,
-                 ckpt_steps = None,
-                 log_dir = None,
-                 output_dir = './saved_models',
-                 device = 'cuda',
-                 fp16 = False,
-                 fp16_opt_level = 'O1',
-                 data_parallel = False,
-                 local_rank = -1
+    
+    def __init__(self, gradient_accumulation_steps=1,
+                 ckpt_frequency=1,
+                 ckpt_epoch_frequency=1,
+                 ckpt_steps=None,
+                 log_dir=None,
+                 output_dir='./saved_models',
+                 device='cuda',
+                 fp16=False,
+                 fp16_opt_level='O1',
+                 data_parallel=False,
+                 local_rank=-1
                  ):
         super(TrainingConfig, self).__init__()
-
-        self.gradient_accumulation_steps =gradient_accumulation_steps
+        
+        self.gradient_accumulation_steps = gradient_accumulation_steps
         self.ckpt_frequency = ckpt_frequency
         self.ckpt_epoch_frequency = ckpt_epoch_frequency
         self.ckpt_steps = ckpt_steps
@@ -91,7 +94,7 @@ class TrainingConfig(Config):
         self.fp16 = fp16
         self.fp16_opt_level = fp16_opt_level
         self.data_parallel = data_parallel
-
+        
         self.local_rank = local_rank
         if self.local_rank == -1 or torch.distributed.get_rank() == 0:
             if not os.path.exists(self.output_dir):
@@ -99,7 +102,7 @@ class TrainingConfig(Config):
 
 
 class IntermediateMatch:
-    def __init__(self,layer_T: Union[int,List[int]], layer_S: Union[int,List[int]],
+    def __init__(self, layer_T: Union[int, List[int]], layer_S: Union[int, List[int]],
                  weight: float, loss: str, feature: str, proj: Optional[List] = None):
         self.layer_T = layer_T
         self.layer_S = layer_S
@@ -111,23 +114,23 @@ class IntermediateMatch:
         if proj:
             assert proj[0] in PROJ_MAP.keys()
             assert type(proj[1]) is int and type(proj[2]) is int
-            if len(proj)==3:
-                self.proj.append(dict())   # ['linear', dim_T, dim_S, {...}]
+            if len(proj) == 3:
+                self.proj.append(dict())  # ['linear', dim_T, dim_S, {...}]
             else:
                 assert type(proj[3]) is dict
-
+    
     def __str__(self):
         str = ""
-        for k,v in self.__dict__.items():
+        for k, v in self.__dict__.items():
             str += f"{k} : {v}, "
         return str[:-2]
-
+    
     def __repr__(self):
         classname = self.__class__.__name__
-        return '\n'+classname +": "+self.__str__()
-
+        return '\n' + classname + ": " + self.__str__()
+    
     @classmethod
-    def from_dict(cls,dict_object):
+    def from_dict(cls, dict_object):
         if dict_object is None:
             return None
         else:
@@ -192,7 +195,7 @@ class DistillationConfig(Config):
         distill_config = DistillationConfig(temperature=8)
 
         # adding intermediate feature matching
-        # under this setting, the returned dict results_T/S of adaptor_T/S should contain 'hidden' key.
+        # under this setting, the returned dict results_T/s of adaptor_T/s should contain 'hidden' key.
         # The mse loss between teacher's results_T['hidden'][10] and student's results_S['hidden'][3] will be computed
         distill_config = DistillationConfig(
             temperature=8,
@@ -210,44 +213,45 @@ class DistillationConfig(Config):
         )
 
     """
-    def __init__(self,temperature=4,
-                      temperature_scheduler = 'none',
-                      hard_label_weight=0,
-                      hard_label_weight_scheduler = 'none',
-                      kd_loss_type='ce',
-                      kd_loss_weight=1,
-                      kd_loss_weight_scheduler = 'none',
-                      probability_shift = False,
-                      intermediate_matches:Optional[List[Dict]]=None,
-                      is_caching_logits = False):
+    
+    def __init__(self, temperature=4,
+                 temperature_scheduler='none',
+                 hard_label_weight=0,
+                 hard_label_weight_scheduler='none',
+                 kd_loss_type='ce',
+                 kd_loss_weight=1,
+                 kd_loss_weight_scheduler='none',
+                 probability_shift=False,
+                 intermediate_matches: Optional[List[Dict]] = None,
+                 is_caching_logits=False):
         super(DistillationConfig, self).__init__()
-
+        
         self.temperature = temperature
         self.temperature_scheduler = None
         if temperature_scheduler != 'none':
             assert temperature_scheduler in TEMPERATURE_SCHEDULER, \
-                    f"Invalid temperature_scheduler {temperature_scheduler}"
+                f"Invalid temperature_scheduler {temperature_scheduler}"
             self.temperature_scheduler = TEMPERATURE_SCHEDULER[temperature_scheduler]
-
+        
         self.hard_label_weight = hard_label_weight
         self.hard_label_weight_scheduler = None
         if hard_label_weight_scheduler != 'none':
             assert hard_label_weight_scheduler in WEIGHT_SCHEDULER, \
-                    "Invalid hard_label_weight_scheduler"
+                "Invalid hard_label_weight_scheduler"
             self.hard_label_weight_scheduler = WEIGHT_SCHEDULER[hard_label_weight_scheduler]
-
+        
         self.kd_loss_type = kd_loss_type
         self.kd_loss_weight = kd_loss_weight
         self.kd_loss_weight_scheduler = None
         if kd_loss_weight_scheduler != 'none':
             assert kd_loss_weight_scheduler in WEIGHT_SCHEDULER, \
-                    "Invalid kd_loss_weight_scheduler"
+                "Invalid kd_loss_weight_scheduler"
             self.kd_loss_weight_scheduler = WEIGHT_SCHEDULER[kd_loss_weight_scheduler]
-
+        
         self.probability_shift = probability_shift
-
-        self.intermediate_matches:[List[IntermediateMatch]] = []
+        
+        self.intermediate_matches: [List[IntermediateMatch]] = []
         if intermediate_matches:
             self.intermediate_matches = [IntermediateMatch.from_dict(im) for im in intermediate_matches]
-
+        
         self.is_caching_logits = is_caching_logits

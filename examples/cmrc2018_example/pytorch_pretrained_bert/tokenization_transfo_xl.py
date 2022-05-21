@@ -269,7 +269,7 @@ class TransfoXLTokenizer(object):
             symbols = line.split(self.delimiter)
 
         if add_double_eos: # lm1b
-            return ['<S>'] + symbols + ['<S>']
+            return ['<s>'] + symbols + ['<s>']
         elif add_eos:
             return symbols + ['<eos>']
         else:

@@ -46,7 +46,7 @@ def main():
 
     logging.basicConfig(
         format='%(asctime)s - %(levelname)s - %(name)s -  %(message)s',
-        datefmt='%Y/%m/%d %H:%M:%S',
+        datefmt='%Y/%m/%d %H:%M:%s',
         level=logging.INFO if args.local_rank in [-1, 0] else logging.WARN
         )
     logger = logging.getLogger("Main")
